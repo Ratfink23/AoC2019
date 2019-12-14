@@ -7,60 +7,76 @@ def opcode_data(instruction):
     directions_list = [opcode, p1_mode, p2_mode, p3_mode]
     return directions_list
 
-def Intcode(memory, input=1):
-    address = 0
-    while True:
-        directions = opcode_data(memory[address])
-        opcode = directions[0]
-        elements = []
-        if opcode == 99: return memory
-        for i in range(1, 4):
-            if directions[i] == 0:
-                elements.append(memory[address+i])
+
+class Intcode:
+    def __init__(self, memory, input1=0, address=0):
+        self.memory = memory
+        self.input1 = input1
+        self.address = address
+        self.output = None
+
+    def run(self):
+        halt = False
+        while not halt:
+            directions = opcode_data(self.memory[self.address])
+            opcode = directions[0]
+            elements = []
+            if opcode == 99:
+                halt = True
+            for i in range(1, 4):
+                if directions[i] == 0:
+                    elements.append(self.memory[self.address+i])
+                else:
+                    elements.append(self.address + i)
+            if opcode == 1:
+                # Add
+                self.memory[elements[2]] = self.memory[elements[0]] + self.memory[elements[1]]
+                self.address += 4
+            elif opcode == 2:
+                # Multiply
+                self.memory[elements[2]] = self.memory[elements[0]] * self.memory[elements[1]]
+                self.address += 4
+            elif opcode == 3:
+                # Insert
+                self.memory[elements[0]] = self.input1
+                self.address += 2
+            elif opcode == 4:
+                # Output
+                self.address += 2
+                self.output = self.memory[elements[0]]
+                halt = True
+            elif opcode == 5:
+                # jump-if-true
+                if self.memory[elements[0]] != 0:
+                    self.address = self.memory[elements[1]]
+                else:
+                    self.address += 3
+            elif opcode == 6:
+                # jump-if-false
+                if self.memory[elements[0]] == 0:
+                    self.address = self.memory[elements[1]]
+                else:
+                    self.address += 3
+            elif opcode == 7:
+                # less than
+                if self.memory[elements[0]] < self.memory[elements[1]]:
+                    self.memory[elements[2]] = 1
+                else:
+                    self.memory[elements[2]] = 0
+                self.address += 4
+            elif opcode == 8:
+                # equals
+                if self.memory[elements[0]] == self.memory[elements[1]]:
+                    self.memory[elements[2]] = 1
+                else:
+                    self.memory[elements[2]] = 0
+                self.address += 4
             else:
-                elements.append(address + i)
-        if opcode == 1:
-            memory[elements[2]] = memory[elements[0]] + memory[elements[1]]
-            address += 4
-        elif opcode == 2:
-            memory[elements[2]] = memory[elements[0]] * memory[elements[1]]
-            address += 4
-        elif opcode == 3:
-            memory[elements[0]] = input
-            address += 2
-        elif opcode == 4:
-            print(memory[elements[0]])
-            address += 2
-        elif opcode == 5:
-            # jump-if-true
-            if memory[elements[0]] != 0:
-                address = memory[elements[1]]
-            else:
-                address += 3
-        elif opcode == 6:
-            # jump-if-false
-            if memory[elements[0]] == 0:
-                address = memory[elements[1]]
-            else:
-                address += 3
-        elif opcode == 7:
-            # less than
-            if memory[elements[0]] < memory[elements[1]]:
-                memory[elements[2]] = 1
-            else:
-                memory[elements[2]] = 0
-            address += 4
-        elif opcode == 8:
-            # equals
-            if memory[elements[0]] == memory[elements[1]]:
-                memory[elements[2]] = 1
-            else:
-                memory[elements[2]] = 0
-            address += 4
-        else:
-            pass
+                pass
+
 
 data = list(map(int, open('Day5_input', 'r').read().split(',')))
-print(data)
 
-Intcode(data, input=5)
+Day5 = Intcode(data, input1=5)
+Day5.run()
+print(Day5.output)
